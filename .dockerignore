@@ -1,0 +1,20 @@
+# Ignorar diretórios que não precisam estar no container
+node_modules
+vendor
+
+*.log
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+
+# Ignorar arquivos específicos do Git
+.git
+.gitignore
+
+# Ignorar arquivos do Composer e do NPM que não são necessários no container
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+npm-debug.log
+yarn-error.log

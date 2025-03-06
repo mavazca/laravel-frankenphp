@@ -1,0 +1,89 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        working_dir: /var/www/
+        entrypoint: php artisan octane:frankenphp
+        volumes:
+            - ./:/var/www/
+        restart: unless-stopped
+        ports:
+            - "8000:8000"
+        depends_on:
+            - mysql
+            - redis
+        networks:
+            - laravel
+
+    queue:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        command: [ "php", "artisan", "queue:work", "--sleep=3", "--tries=3" ]
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - mysql
+        networks:
+            - laravel
+
+    mysql:
+        image: mysql:latest
+        restart: always
+        ports:
+            - "3306:3306"
+        volumes:
+            - mysql-data:/var/lib/mysql
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+            MYSQL_USER: ${DB_USERNAME:-laravel}
+            MYSQL_PASSWORD: ${DB_PASSWORD:-root}
+            LANG: C.UTF-8
+        command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+        healthcheck:
+            test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - laravel
+
+    redis:
+        image: redis:latest
+        ports:
+            - "6379:6379"
+        networks:
+            - laravel
+
+    mailpit:
+        image: axllent/mailpit:latest
+        restart: on-failure
+        tty: true
+        ports:
+            - "1025:1025"
+            - "8025:8025"
+        networks:
+            - laravel
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        restart: always
+        ports:
+            - "8080:80"
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: 3306
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+        networks:
+            - laravel
+
+volumes:
+    mysql-data:
+    redis-data:
+
+networks:
+    laravel:
+        driver: bridge
